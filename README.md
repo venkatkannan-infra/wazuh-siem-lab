@@ -351,9 +351,9 @@ Follow these steps in order to rebuild this entire lab from scratch:
 
 ## 👤 Author
 
-**[Your Name]**
-- 🌐 Portfolio: [your-website.com]
-- 💼 LinkedIn: [linkedin.com/in/yourprofile]
+Venkat Kannan
+- 🌐 Portfolio: [www.venkatkannan.com]
+- 💼 LinkedIn: [linkedin.com/in/venkan]
 - 🐙 GitHub: [github.com/venkatkannan-infra]
 
 ---
