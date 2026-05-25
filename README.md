@@ -320,6 +320,7 @@ Follow these steps in order to rebuild this entire lab from scratch:
 
 
 ![MITRE ATT&CK heatmap showing Account Manipulation detection](images/MITRE_ATT&CK_heatmap.jpg)
+MITRE ATT&CK heatmap
 
 ---
 
