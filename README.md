@@ -317,6 +317,8 @@ Follow these steps in order to rebuild this entire lab from scratch:
 | 3 | User Creation | Unauthorized user account creation detected | Medium-High | T1136 — Create Account | 4720 | ✅ Detected |
 | 4 | Baseline | 355 medium severity alerts from normal Windows activity | Medium | Various | Various | ✅ Monitored |
 | 5 | Baseline | 162 low severity alerts from normal system operations | Low | Various | Various | ✅ Monitored |
+
+
 ![MITRE ATT&CK heatmap showing Account Manipulation detection](images/MITRE_ATT&CK_heatmap.jpg)
 
 ---
