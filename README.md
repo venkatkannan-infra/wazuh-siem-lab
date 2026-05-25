@@ -11,6 +11,7 @@
 - [Tools & Technologies](#tools--technologies)
 - [Lab Setup](#lab-setup)
 - [Attack Simulations & Detections](#attack-simulations--detections)
+- [How to Reproduce This Lab](#how-to-reproduce-this-lab)
 - [Key Findings](#key-findings)
 - [Screenshots](#screenshots)
 - [Skills Demonstrated](#skills-demonstrated)
@@ -44,7 +45,7 @@ This project documents the setup and use of a home SIEM lab using **Wazuh** — 
 │  │  Wazuh Agent     │      │  - Wazuh Manager    │  │
 │  │  Installed       │      │  - Wazuh Dashboard  │  │
 │  └──────────────────┘      │  - Elasticsearch    │  │
-│                            │  - Kibana           │  │
+│                            │  - OpenSearch       │  │
 │                            └─────────────────────┘  │
 └─────────────────────────────────────────────────────┘
 ```
@@ -60,42 +61,67 @@ This project documents the setup and use of a home SIEM lab using **Wazuh** — 
 | **Wazuh Agent** | 4.14.5 | Installed on Windows PC to ship logs to Wazuh |
 | **Windows 11** | Latest | Monitored endpoint (attack target) |
 | **MITRE ATT&CK** | v14 | Threat framework for mapping detections |
+| **PowerShell** | Built-in | Used to run attack simulations |
 
 ---
 
 ## Lab Setup
 
-### Step 1 — Deployed Wazuh OVA in VirtualBox
-- Downloaded the Wazuh OVA virtual machine from the official Wazuh website
-- Imported the OVA into Oracle VirtualBox
-- Configured VM with 4GB RAM for stable performance
-- Accessed the Wazuh dashboard via browser at the VM's local IP address
+### Step 1 — Install VirtualBox
+- Download VirtualBox from `https://www.virtualbox.org/wiki/Downloads`
+- Click **Windows hosts** and run the installer
+- Click through all defaults and restart your PC
 
-### Step 2 — Deployed Wazuh Agent on Windows PC
-- Used the Wazuh dashboard to generate a Windows agent installer command
-- Ran the PowerShell installer as Administrator on the Windows endpoint
-- Verified the agent appeared as **Active** in the Wazuh dashboard
+### Step 2 — Download and Import Wazuh OVA
+- Download the Wazuh OVA from `https://documentation.wazuh.com/current/deployment-options/virtual-machine/virtual-machine.html`
+- Open VirtualBox → click **File → Import Appliance**
+- Select the downloaded `.ova` file → click **Next → Import**
+- Wait 5 minutes for import to complete
 
-### Step 3 — Verified Log Ingestion
-- Confirmed Windows Security, System, and Application logs were flowing into Wazuh
-- Observed baseline alerts from normal Windows activity (355 medium, 162 low severity)
+### Step 3 — Configure and Start the Wazuh VM
+- Right-click the Wazuh VM → **Settings → System**
+- Set RAM to **4096 MB** → click OK
+- Click the green **Start** button
+- Log into the VM console with:
+  - Username: `wazuh-user`
+  - Password: `wazuh`
+- Run `ip a` to find the VM IP address (e.g. `192.168.x.x`)
+
+### Step 4 — Access the Wazuh Dashboard
+- Open a browser on your Windows PC
+- Go to `https://192.168.x.x` (use the IP from Step 3)
+- Accept the browser security warning → click **Advanced → Proceed**
+- Log in with:
+  - Username: `admin`
+  - Password: `admin`
+
+### Step 5 — Deploy Wazuh Agent on Windows PC
+- In the Wazuh dashboard click **Agents → Deploy new agent**
+- Select **Windows**
+- Enter the Wazuh server IP address (from Step 3)
+- Enter an agent name (e.g. `my-lap`)
+- Leave group as **default**
+- Copy the generated PowerShell command
+- Open **PowerShell as Administrator** on your Windows PC
+- Paste and run the command
+- Wait 1-2 minutes — your PC will appear as **Active** in the dashboard
+
+### Step 6 — Verify Log Ingestion
+- In the Wazuh dashboard go to **Overview**
+- Confirm your agent shows as **Active (1)**
+- Baseline alerts from normal Windows activity will already be visible
+  - 355 Medium severity alerts
+  - 162 Low severity alerts
 
 ---
 
 ## Attack Simulations & Detections
 
+---
+
 ### 🔴 Simulation 1 — Brute Force / Authentication Failure
 
 **Objective:** Simulate a brute force login attack and verify detection by the SIEM.
-
-**Method:**
-- Locked the Windows PC and intentionally entered incorrect passwords multiple times
-- Monitored the Wazuh Threat Hunting dashboard for authentication failure alerts
-
-**Result:**
-- Wazuh detected **6 Authentication Failure** events
-- Alerts were correctly tagged with `authentication_failed`, `windows`, and `windows_security`
-- Events logged with accurate timestamps
 
 **MITRE ATT&CK Mapping:**
 
@@ -103,84 +129,240 @@ This project documents the setup and use of a home SIEM lab using **Wazuh** — 
 |---|---|---|
 | Credential Access | Brute Force | T1110 |
 
-**Alert Severity:** Medium
+**Steps to Reproduce:**
+
+1. Press **Windows + L** to lock your Windows PC
+2. At the login screen, enter the **wrong password 5-6 times** deliberately
+3. Log back in with the correct password
+4. Go to Wazuh dashboard → **Threat Hunting**
+5. In the search bar type:
+   ```
+   Authentication failure
+   ```
+6. Set time filter to **Last 1 hour** → click **Refresh**
+
+**What to Look For in Wazuh:**
+- Filter tags: `authentication_failed`, `windows`, `windows_security`
+- Rule Description: `Windows Logon Failure`
+- Windows Event ID: `4625`
+
+**Result Observed:**
+- Wazuh detected **6 Authentication Failure** events ✅
+- Alerts correctly tagged with `authentication_failed`, `windows`, `windows_security`
+- Events logged with accurate timestamps
+- Alert chart showed spike at exact time of simulation
+
+**Alert Severity:** Medium (Rule Level 5-8)
 
 ---
 
-### 🟡 Simulation 2 — Suspicious File Creation *(Coming Soon)*
+### 🟡 Simulation 2 — Suspicious File Creation (Malware Simulation)
 
-**Objective:** Create a suspicious executable file and detect it via file integrity monitoring.
+**Objective:** Simulate malware dropping a suspicious executable file and detect it via Wazuh File Integrity Monitoring (FIM).
 
-**Method:**
-- Create a `.exe` file in a sensitive directory using PowerShell
-- Monitor Wazuh File Integrity Monitoring (FIM) alerts
+**MITRE ATT&CK Mapping:**
 
-**Status:** 🔄 In Progress
+| Tactic | Technique | ID |
+|---|---|---|
+| Defense Evasion | Masquerading | T1036 |
+| Execution | User Execution | T1204 |
+
+**Steps to Reproduce:**
+
+1. Open **PowerShell as Administrator** (right-click → Run as Administrator)
+2. Run this command to create a suspicious `.exe` file:
+   ```powershell
+   New-Item -Path "C:\Users\Public\malware_test.exe" -ItemType File
+   ```
+3. Wait **2 minutes** for Wazuh FIM to detect the change
+4. Go to Wazuh dashboard → **Endpoint Security → Integrity Monitoring**
+5. Click on your agent name
+6. Look for alerts tagged with `syscheck_entry_added`
+
+**Alternative Search in Threat Hunting:**
+- Go to **Threat Hunting**
+- Click **Add filter** → set:
+  - Field: `rule.groups`
+  - Operator: `is`
+  - Value: `syscheck_entry_added`
+- Click **Refresh**
+
+**What to Look For in Wazuh:**
+
+| Field | Value |
+|---|---|
+| Rule Description | File added to the system |
+| Location | C:\Users\Public\malware_test.exe |
+| Rule Level | 7 (Medium) |
+| Group | syscheck, file_creation |
+
+**Cleanup After Testing:**
+```powershell
+Remove-Item -Path "C:\Users\Public\malware_test.exe"
+```
+
+**Result Observed:**
+- Wazuh FIM detected the new `.exe` file creation ✅
+- Alert appeared under `syscheck`, `syscheck_entry_added` groups
+- File path, timestamp, and checksum all logged correctly
+
+**Alert Severity:** Medium (Rule Level 7)
 
 ---
 
-### 🟡 Simulation 3 — New User Account Creation *(Coming Soon)*
+### 🔴 Simulation 3 — Unauthorized User Account Creation
 
-**Objective:** Simulate insider threat by creating an unauthorized user account.
+**Objective:** Simulate an insider threat or attacker creating a backdoor user account and detect it via Windows Security Event logs.
 
-**Method:**
-- Use `net user` command to create a new Windows user
-- Detect and alert on account creation event
+**MITRE ATT&CK Mapping:**
 
-**Status:** 🔄 In Progress
+| Tactic | Technique | ID |
+|---|---|---|
+| Persistence | Create Account | T1136 |
+| Privilege Escalation | Valid Accounts | T1078 |
+
+**Steps to Reproduce:**
+
+**Part A — Create the User:**
+1. Open **PowerShell as Administrator**
+2. Run this command:
+   ```powershell
+   net user hacktest3 Password123! /add
+   ```
+3. Confirm it was created:
+   ```powershell
+   net user hacktest3
+   ```
+
+**Part B — Escalate Privileges (Optional — triggers higher alert):**
+```powershell
+net localgroup administrators hacktest3 /add
+```
+This triggers **Windows Event ID 4732** — privilege escalation alert.
+
+**Part C — View Alert in Wazuh:**
+1. Go to Wazuh dashboard → **Threat Hunting**
+2. In the search bar type:
+   ```
+   4720
+   ```
+3. Set time filter to **Last 1 hour** → click **Refresh**
+4. Scroll down to the alerts table
+5. Click the **▶ arrow** on any alert row to expand full details
+
+**What to Look For in Wazuh:**
+
+| Field | Value |
+|---|---|
+| Windows Event ID | 4720 |
+| Rule Description | Windows User Account Created |
+| MITRE Technique | Account Manipulation |
+| Agent | my-lap (your Windows PC) |
+| data.win.eventdata.targetUserName | hacktest3 |
+
+**Verify in Windows Event Viewer:**
+1. Press **Windows + R** → type `eventvwr.msc`
+2. Go to **Windows Logs → Security**
+3. Click **Filter Current Log** → type `4720` → click OK
+4. Find the event showing `hacktest3` was created
+
+**Cleanup After Testing:**
+```powershell
+net localgroup administrators hacktest3 /delete
+net user hacktest3 /delete
+```
+
+**Result Observed:**
+- Wazuh detected **2 account creation events** ✅
+- MITRE ATT&CK automatically mapped to **Account Manipulation**
+- Alert spike visible at exact time of user creation
+- Windows PC (my-lap) correctly identified as the source
+
+**Alert Severity:** Medium-High (Rule Level 8)
+
+---
+
+## How to Reproduce This Lab
+
+Follow these steps in order to rebuild this entire lab from scratch:
+
+| Step | Action | Time |
+|---|---|---|
+| 1 | Install VirtualBox | 10 mins |
+| 2 | Download Wazuh OVA (4GB) | 10-20 mins |
+| 3 | Import OVA into VirtualBox | 5 mins |
+| 4 | Start VM and access dashboard | 5 mins |
+| 5 | Deploy Wazuh agent on Windows PC | 5 mins |
+| 6 | Run Simulation 1 — Brute Force | 5 mins |
+| 7 | Run Simulation 2 — File Creation | 5 mins |
+| 8 | Run Simulation 3 — User Creation | 5 mins |
+| **Total** | **Full lab setup and testing** | **~60 mins** |
+
+**Prerequisites:**
+- Windows 10 or 11 PC
+- Minimum 8GB RAM (4GB for VM + 4GB for Windows)
+- Minimum 50GB free disk space
+- Internet connection for downloads
 
 ---
 
 ## Key Findings
 
-| # | Finding | Severity | MITRE Technique | Status |
-|---|---|---|---|---|
-| 1 | 6 Authentication failure events detected after brute force simulation | Medium | T1110 — Brute Force | ✅ Detected |
-| 2 | 355 medium severity alerts from baseline Windows activity | Medium | Various | ✅ Monitored |
-| 3 | 162 low severity alerts from normal system operations | Low | Various | ✅ Monitored |
-| 4 | Windows Security logs successfully ingested in real time | Info | — | ✅ Confirmed |
+| # | Simulation | Finding | Severity | MITRE Technique | Windows Event ID | Status |
+|---|---|---|---|---|---|---|
+| 1 | Brute Force | 6 authentication failure events detected | Medium | T1110 — Brute Force | 4625 | ✅ Detected |
+| 2 | File Creation | Suspicious .exe file creation detected by FIM | Medium | T1036 — Masquerading | — | ✅ Detected |
+| 3 | User Creation | Unauthorized user account creation detected | Medium-High | T1136 — Create Account | 4720 | ✅ Detected |
+| 4 | Baseline | 355 medium severity alerts from normal Windows activity | Medium | Various | Various | ✅ Monitored |
+| 5 | Baseline | 162 low severity alerts from normal system operations | Low | Various | Various | ✅ Monitored |
 
 ---
 
 ## Screenshots
 
-> Screenshots will be added to the `/screenshots` folder in this repository.
+> Add your screenshots to the `/screenshots` folder in this repository.
 
 | Screenshot | Description |
 |---|---|
-| `dashboard-overview.png` | Wazuh Overview showing active agent and 24-hour alerts |
-| `authentication-failure.png` | Threat Hunting view showing 6 brute force login detections |
-| `agent-connected.png` | Windows PC showing as active monitored agent |
-| `mitre-attack.png` | MITRE ATT&CK heatmap from the lab |
+| `01-dashboard-overview.png` | Wazuh Overview — active agent and 24-hour alert summary |
+| `02-agent-connected.png` | Windows PC (my-lap) showing as Active monitored agent |
+| `03-brute-force-alerts.png` | Threat Hunting — 6 authentication failure events detected |
+| `04-file-creation-alert.png` | Integrity Monitoring — suspicious .exe file creation detected |
+| `05-user-creation-alert.png` | Threat Hunting — Event ID 4720 user account creation detected |
+| `06-mitre-attack-map.png` | MITRE ATT&CK heatmap showing Account Manipulation detection |
 
 ---
 
 ## Skills Demonstrated
 
-- ✅ **SIEM Deployment** — Set up and configured Wazuh from scratch
-- ✅ **Endpoint Monitoring** — Deployed and managed a Wazuh agent on Windows
-- ✅ **Threat Detection** — Identified and analyzed real security alerts
-- ✅ **Attack Simulation** — Simulated brute force and monitored results
-- ✅ **MITRE ATT&CK** — Mapped detected events to the ATT&CK framework
-- ✅ **Log Analysis** — Investigated Windows Security event logs
-- ✅ **Incident Investigation** — Drilled into individual alerts for root cause
-- ✅ **Documentation** — Recorded findings in a professional SOC-style format
+- ✅ **SIEM Deployment** — Deployed and configured Wazuh OVA from scratch in VirtualBox
+- ✅ **Endpoint Monitoring** — Deployed and managed Wazuh agent on a live Windows endpoint
+- ✅ **Threat Detection** — Identified and analyzed real security alerts across 3 attack scenarios
+- ✅ **Attack Simulation** — Simulated brute force, file creation, and account creation attacks
+- ✅ **MITRE ATT&CK** — Mapped all detected events to ATT&CK techniques (T1110, T1036, T1136)
+- ✅ **Log Analysis** — Investigated Windows Security event logs (Event IDs 4625, 4720, 4732)
+- ✅ **File Integrity Monitoring** — Used Wazuh FIM to detect unauthorized file system changes
+- ✅ **Incident Investigation** — Drilled into individual alerts for timestamps, sources, and rule details
+- ✅ **Documentation** — Recorded all findings in a professional SOC analyst style report
 
 ---
 
 ## References
 
 - [Wazuh Official Documentation](https://documentation.wazuh.com)
+- [Wazuh OVA Download](https://documentation.wazuh.com/current/deployment-options/virtual-machine/virtual-machine.html)
 - [MITRE ATT&CK Framework](https://attack.mitre.org)
 - [VirtualBox Downloads](https://www.virtualbox.org)
-- [Windows Security Event IDs](https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/)
+- [Windows Security Event IDs Reference](https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/)
+- [Atomic Red Team — Attack Simulation](https://github.com/redcanaryco/atomic-red-team)
 
 ---
 
 ## 👤 Author
-Venkat Kannan
-- 🌐 Portfolio: www.venkatkannan.com
-- 💼 LinkedIn: [linkedin.com/in/venkan]
+
+**[Your Name]**
+- 🌐 Portfolio: [your-website.com]
+- 💼 LinkedIn: [linkedin.com/in/yourprofile]
 - 🐙 GitHub: [github.com/venkatkannan-infra]
 
 ---
