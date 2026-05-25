@@ -112,7 +112,7 @@ This project documents the setup and use of a home SIEM lab using **Wazuh** — 
 - Baseline alerts from normal Windows activity will already be visible
   - 9 Medium severity alerts
   - 191 Low severity alerts
-![Wazuh Dashboard](Images/dashboard_overview.jpg)
+![Wazuh Dashboard](images/dashboard_overview.jpg)
 
 ---
 
@@ -154,7 +154,7 @@ This project documents the setup and use of a home SIEM lab using **Wazuh** — 
 - Alert chart showed spike at exact time of simulation
 
 **Alert Severity:** Medium (Rule Level 5-8)
-![Brute Force Detection](Images/Brute_force_attack.jpg)
+![Brute Force Detection](images/Brute_force_attack.jpg)
 ---
 
 ### 🟡 Simulation 2 — Suspicious File Creation (Malware Simulation)
@@ -208,7 +208,7 @@ Remove-Item -Path "C:\Users\Public\malware_test.exe"
 - File path, timestamp, and checksum all logged correctly
 
 **Alert Severity:** Medium (Rule Level 7)
-![Malware Simulation](Images/Malware_simulation.jpg)
+![Malware Simulation](images/Malware_simulation.jpg)
 
 ---
 
@@ -281,7 +281,7 @@ net user hacktest3 /delete
 - Windows PC (my-lap) correctly identified as the source
 
 **Alert Severity:** Medium-High (Rule Level 8)
-![Account creation alert](Images/user_creation_alert.jpg)
+![Account creation alert](images/user_creation_alert.jpg)
 ---
 
 ## How to Reproduce This Lab
