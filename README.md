@@ -317,21 +317,7 @@ Follow these steps in order to rebuild this entire lab from scratch:
 | 3 | User Creation | Unauthorized user account creation detected | Medium-High | T1136 — Create Account | 4720 | ✅ Detected |
 | 4 | Baseline | 355 medium severity alerts from normal Windows activity | Medium | Various | Various | ✅ Monitored |
 | 5 | Baseline | 162 low severity alerts from normal system operations | Low | Various | Various | ✅ Monitored |
-
----
-
-## Screenshots
-
-> Add your screenshots to the `/screenshots` folder in this repository.
-
-| Screenshot | Description |
-|---|---|
-| `01-dashboard-overview.png` | Wazuh Overview — active agent and 24-hour alert summary |
-| `02-agent-connected.png` | Windows PC (my-lap) showing as Active monitored agent |
-| `03-brute-force-alerts.png` | Threat Hunting — 6 authentication failure events detected |
-| `04-file-creation-alert.png` | Integrity Monitoring — suspicious .exe file creation detected |
-| `05-user-creation-alert.png` | Threat Hunting — Event ID 4720 user account creation detected |
-| `06-mitre-attack-map.png` | MITRE ATT&CK heatmap showing Account Manipulation detection |
+![MITRE ATT&CK heatmap showing Account Manipulation detection](images/MITRE_ATT&CK_heatmap.jpg)
 
 ---
 
