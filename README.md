@@ -13,7 +13,6 @@
 - [Attack Simulations & Detections](#attack-simulations--detections)
 - [How to Reproduce This Lab](#how-to-reproduce-this-lab)
 - [Key Findings](#key-findings)
-- [Screenshots](#screenshots)
 - [Skills Demonstrated](#skills-demonstrated)
 - [References](#references)
 
@@ -321,7 +320,8 @@ Follow these steps in order to rebuild this entire lab from scratch:
 
 ![MITRE ATT&CK heatmap showing Account Manipulation detection](images/MITRE_ATT&CK_heatmap.jpg)
 **MITRE ATT&CK heatmap**
-
+![MITRE ATT&CK heatmap Framework](images/MITRE ATT&CK framework.jpeg)
+**MITRE ATT&CK framework**
 ---
 
 ## Skills Demonstrated
